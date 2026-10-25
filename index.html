@@ -3,62 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WISP Support Admin</title>
-    <!-- Подключаем официальный SDK Telegram -->
+    <title>WISP Admin</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            padding: 20px;
-            margin: 0;
-        }
-        h2 { text-align: center; font-size: 20px; }
-        .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        button {
-            padding: 15px;
-            font-size: 16px;
-            border: none;
-            border-radius: 10px;
-            background-color: var(--tg-theme-button-color, #2481cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        button:active { opacity: 0.7; }
+        body { font-family: sans-serif; background-color: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); padding: 20px; text-align: center; }
+        .input-group { display: none; margin-bottom: 20px; } /* Скрыто по умолчанию */
+        input { width: 90%; padding: 15px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; background: var(--tg-theme-secondary-bg-color, #f0f0f0); color: inherit; }
+        .btn-group { display: flex; flex-direction: column; gap: 10px; }
+        button { padding: 15px; font-size: 16px; border: none; border-radius: 10px; background-color: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #ffffff); font-weight: bold; }
         .danger { background-color: #dc3545; color: white; }
+        .info { margin-bottom: 20px; font-weight: bold; color: #2481cc; }
     </style>
 </head>
 <body>
-    <h2> Панель Модератора</h2>
-    <p style="text-align: center; opacity: 0.7; font-size: 14px;">Выберите действие для пользователя</p>
+    <h2>🛠 Модерация</h2>
+    
+    <div class="info" id="targetInfo">ID пользователя: не выбран</div>
+
+    <div class="input-group" id="inputGroup">
+        <input type="text" id="targetUser" placeholder="Введите числовой ID">
+    </div>
     
     <div class="btn-group">
-        <button onclick="sendAction('ban')"> Забанить (навсегда)</button>
-        <button onclick="sendAction('kick')"> Кикнуть (может вернуться)</button>
-        <button onclick="sendAction('mute')"> Замутить</button>
-        <button onclick="sendAction('unmute')"> Размутить</button>
-        <button class="danger" onclick="sendAction('unban')"> Разбанить</button>
+        <button onclick="sendAction('ban')">🔨 Забанить</button>
+        <button onclick="sendAction('kick')">👢 Кикнуть</button>
+        <button onclick="sendAction('mute')">🔇 Замутить</button>
+        <button onclick="sendAction('unmute')">🎙 Размутить</button>
+        <button class="danger" onclick="sendAction('unban')">🔓 Разбанить</button>
     </div>
 
     <script>
-        // Инициализация Web App
         const tg = window.Telegram.WebApp;
-        tg.ready(); // Говорим Telegram, что приложение готово
-        tg.expand(); // Разворачиваем на весь экран
+        tg.ready();
+        tg.expand();
 
-        // Функция отправки действия в бота
+        let targetId = "";
+
+        // Проверяем, передал ли бот ID в ссылке (startapp)
+        if (tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
+            targetId = tg.initDataUnsafe.start_param;
+            document.getElementById('targetInfo').innerText = "Выбранный ID: " + targetId;
+        } else {
+            // Если ID не передан, показываем поле ввода
+            document.getElementById('inputGroup').style.display = "block";
+        }
+
         function sendAction(action) {
-            const data = {
-                action: action,
-                // В реальном проекте здесь передается ID пользователя из контекста
-                target_user_id: 123456789 // Замени на логику получения ID
-            };
+            let finalId = targetId;
             
-            tg.sendData(JSON.stringify(data)); // Отправляем данные боту
-            tg.close(); // Закрываем Web App после действия
+            // Если ID не был передан, берем его из поля ввода
+            if (!finalId) {
+                finalId = document.getElementById('targetUser').value.trim();
+            }
+            
+            if (!finalId) {
+                alert("Введите ID пользователя!");
+                return;
+            }
+            
+            const data = { action: action, target_id: finalId };
+            tg.sendData(JSON.stringify(data));
+            tg.close();
         }
     </script>
 </body>
